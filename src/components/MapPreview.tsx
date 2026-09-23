@@ -228,7 +228,7 @@ const LayerFootprint = styled.span<{ $color: string; $opacity: number }>`
     ${({ $color }) => `${$color}70`} 26%,
     ${({ $color }) => `${$color}00`} 72%
   );
-  opacity: ${({ $opacity }) => Math.max(0.12, $opacity * 0.72)};
+  opacity: ${({ $opacity }) => $opacity * 0.72};
   mix-blend-mode: multiply;
   transform: translate(-50%, -50%);
   transition: opacity 220ms ease;
