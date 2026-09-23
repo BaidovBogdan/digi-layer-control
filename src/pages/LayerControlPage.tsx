@@ -1,12 +1,15 @@
 import styled from 'styled-components';
 
-import { LayerCard } from '../components/LayerCard';
+import { LayerList } from '../components/LayerList';
 import { LayerSummary } from '../components/LayerSummary';
 import { MapPreview } from '../components/MapPreview';
-import { LAYER_DEFINITIONS } from '../features/layers/types';
+import { useLayerSelector } from '../features/layers/store';
+import { useLayerCatalogController } from '../features/layers/useLayerCatalogController';
 import { useLayerController } from '../features/layers/useLayerController';
 
 export function LayerControlPage() {
+  const catalog = useLayerSelector((state) => state.catalog);
+  const { retry: retryCatalog } = useLayerCatalogController();
   const { setEnabled, setOpacity, retry } = useLayerController();
 
   return (
@@ -40,21 +43,35 @@ export function LayerControlPage() {
             <PanelHeader>
               <div>
                 <PanelTitle>Слои данных</PanelTitle>
-                <PanelDescription>{LAYER_DEFINITIONS.length} источника данных</PanelDescription>
+                <PanelDescription>
+                  {catalog.status === 'success'
+                    ? formatSourceCount(catalog.definitions.length)
+                    : catalog.status === 'loading'
+                      ? 'Загружаем каталог…'
+                      : 'Каталог недоступен'}
+                </PanelDescription>
               </div>
             </PanelHeader>
             <LayerSummary />
-            <LayerList>
-              {LAYER_DEFINITIONS.map((definition) => (
-                <LayerCard
-                  key={definition.id}
-                  definition={definition}
-                  onEnabledChange={setEnabled}
-                  onOpacityChange={setOpacity}
-                  onRetry={retry}
-                />
-              ))}
-            </LayerList>
+            {catalog.status === 'loading' ? (
+              <CatalogMessage role="status">Получаем доступные слои…</CatalogMessage>
+            ) : catalog.status === 'error' ? (
+              <CatalogError role="alert">
+                <span>{catalog.error ?? 'Не удалось загрузить каталог'}</span>
+                <RetryCatalogButton type="button" onClick={retryCatalog}>
+                  Повторить загрузку
+                </RetryCatalogButton>
+              </CatalogError>
+            ) : catalog.definitions.length === 0 ? (
+              <CatalogMessage role="status">Каталог не содержит слоёв</CatalogMessage>
+            ) : (
+              <LayerList
+                definitions={catalog.definitions}
+                onEnabledChange={setEnabled}
+                onOpacityChange={setOpacity}
+                onRetry={retry}
+              />
+            )}
           </LayerPanel>
         </Workspace>
 
@@ -66,6 +83,18 @@ export function LayerControlPage() {
     </PageShell>
   );
 }
+
+const formatSourceCount = (count: number): string => {
+  const remainder10 = count % 10;
+  const remainder100 = count % 100;
+  const word =
+    remainder10 === 1 && remainder100 !== 11
+      ? 'источник'
+      : remainder10 >= 2 && remainder10 <= 4 && (remainder100 < 12 || remainder100 > 14)
+        ? 'источника'
+        : 'источников';
+  return `${count} ${word} данных`;
+};
 
 const PageShell = styled.div`
   min-height: 100vh;
@@ -218,10 +247,43 @@ const PanelDescription = styled.p`
   font-size: 11px;
 `;
 
-const LayerList = styled.div`
+const CatalogMessage = styled.p`
+  margin: 13px 0 0;
+  padding: 22px 12px;
+  border: 1px dashed #d8e1d7;
+  border-radius: 10px;
+  color: #68766c;
+  font-size: 12px;
+  text-align: center;
+`;
+
+const CatalogError = styled.div`
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin-top: 13px;
+  padding: 14px;
+  border: 1px solid #f1d6cc;
+  border-radius: 10px;
+  background: #fff8f5;
+  color: #925443;
+  font-size: 12px;
+  line-height: 1.45;
+`;
+
+const RetryCatalogButton = styled.button`
+  justify-self: start;
+  padding: 8px 11px;
+  border: 1px solid #c7836d;
+  border-radius: 8px;
+  background: #fff;
+  color: #874a38;
+  font-size: 11px;
+  font-weight: 700;
+
+  &:focus-visible {
+    outline: 3px solid #f0c7b9;
+    outline-offset: 2px;
+  }
 `;
 
 const FooterNote = styled.p`

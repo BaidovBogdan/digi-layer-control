@@ -4,13 +4,12 @@ export interface LayerDefinition {
   description: string;
   unit: string;
   color: string;
-  mockValue: number;
-  mockDelayMs: number;
 }
 
 export type LayerId = LayerDefinition['id'];
 
 export type LayerStatus = 'idle' | 'loading' | 'success' | 'error';
+export type CatalogStatus = 'loading' | 'success' | 'error';
 
 export interface LayerData {
   value: number;
@@ -29,38 +28,13 @@ export interface LayerState {
 }
 
 export interface LayerStoreState {
+  catalog: {
+    status: CatalogStatus;
+    definitions: LayerDefinition[];
+    error: string | null;
+  };
   layers: Record<LayerId, LayerState>;
 }
-
-export const LAYER_DEFINITIONS = [
-  {
-    id: 'temperature',
-    name: 'Температура',
-    description: 'Температура поверхности',
-    unit: '°C',
-    color: '#e16f54',
-    mockValue: 18.6,
-    mockDelayMs: 900,
-  },
-  {
-    id: 'wind',
-    name: 'Ветер',
-    description: 'Скорость и направление',
-    unit: 'м/с',
-    color: '#438e9c',
-    mockValue: 4.8,
-    mockDelayMs: 1250,
-  },
-  {
-    id: 'insolation',
-    name: 'Инсоляция',
-    description: 'Поток солнечной радиации',
-    unit: 'Вт/м²',
-    color: '#d1a53b',
-    mockValue: 642,
-    mockDelayMs: 700,
-  },
-] as const satisfies readonly LayerDefinition[];
 
 export const INITIAL_LAYER_STATE: LayerState = {
   enabled: false,
@@ -71,18 +45,13 @@ export const INITIAL_LAYER_STATE: LayerState = {
   requestId: 0,
 };
 
-const createInitialLayers = (): Record<LayerId, LayerState> => {
-  const layers: Record<LayerId, LayerState> = {};
-
-  for (const definition of LAYER_DEFINITIONS) {
-    layers[definition.id] = { ...INITIAL_LAYER_STATE };
-  }
-
-  return layers;
-};
-
 export const INITIAL_STORE_STATE: LayerStoreState = {
-  layers: createInitialLayers(),
+  catalog: {
+    status: 'loading',
+    definitions: [],
+    error: null,
+  },
+  layers: {},
 };
 
 export const STATUS_LABELS: Record<LayerStatus, string> = {

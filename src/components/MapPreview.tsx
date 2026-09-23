@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 
 import { useLayerSelector } from '../features/layers/store';
-import { LAYER_DEFINITIONS } from '../features/layers/types';
 
 const SPOT_POSITIONS = [
   { left: '27%', top: '34%' },
@@ -10,13 +9,18 @@ const SPOT_POSITIONS = [
 ];
 
 export function MapPreview() {
-  const layers = useLayerSelector((state) =>
-    LAYER_DEFINITIONS.map((definition) => ({
-      definition,
-      state: state.layers[definition.id],
-    })),
-  );
-  const activeLayers = layers.filter(({ state }) => state.enabled);
+  const { activeLayers, totalActiveCount } = useLayerSelector((state) => {
+    const active = state.catalog.definitions.flatMap((definition) => {
+      const layer = state.layers[definition.id];
+      return layer?.enabled ? [{ definition, state: layer }] : [];
+    });
+
+    return {
+      activeLayers: active.slice(0, SPOT_POSITIONS.length),
+      totalActiveCount: active.length,
+    };
+  });
+  const hiddenLayerCount = totalActiveCount - activeLayers.length;
 
   return (
     <Preview aria-label="Предпросмотр карты">
@@ -95,7 +99,7 @@ export function MapPreview() {
             key={definition.id}
             $color={definition.color}
             $opacity={state.opacity / 100}
-            style={SPOT_POSITIONS[index % SPOT_POSITIONS.length]}
+            style={SPOT_POSITIONS[index]}
           />
         ))}
 
@@ -117,6 +121,7 @@ export function MapPreview() {
           ) : (
             <EmptyLegend as="li">Включите слой, чтобы увидеть его в предпросмотре</EmptyLegend>
           )}
+          {hiddenLayerCount > 0 ? <LegendMore as="li">+ ещё {hiddenLayerCount}</LegendMore> : null}
         </MapLegend>
       </MapScene>
 
@@ -294,6 +299,14 @@ const LegendValue = styled.strong`
   color: #35463a;
   font-variant-numeric: tabular-nums;
   font-weight: 720;
+`;
+
+const LegendMore = styled.li`
+  padding: 4px 7px;
+  color: #68766c;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
 `;
 
 const EmptyLegend = styled.span`

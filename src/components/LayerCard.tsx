@@ -113,10 +113,19 @@ function LayerIcon({ id }: { id: LayerId }) {
     );
   }
 
+  if (id === 'insolation') {
+    return (
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="3.3" />
+        <path d="M12 2.7v2.1M12 19.2v2.1M21.3 12h-2.1M4.8 12H2.7m15.9-6.6-1.5 1.5M6.9 17.1l-1.5 1.5m13.2 0-1.5-1.5M6.9 6.9 5.4 5.4" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="3.3" />
-      <path d="M12 2.7v2.1M12 19.2v2.1M21.3 12h-2.1M4.8 12H2.7m15.9-6.6-1.5 1.5M6.9 17.1l-1.5 1.5m13.2 0-1.5-1.5M6.9 6.9 5.4 5.4" />
+      <path d="m3.5 7.2 8.5-4 8.5 4-8.5 4-8.5-4Z" />
+      <path d="m3.5 12 8.5 4 8.5-4M3.5 16.8l8.5 4 8.5-4" />
     </svg>
   );
 }

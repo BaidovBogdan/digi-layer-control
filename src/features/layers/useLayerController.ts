@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import { loadLayerData } from './api';
-import { updateLayerState, useLayerDispatch, useLayerStore } from './store';
+import { updateLayerState, useLayerDispatch, useLayerSelector, useLayerStore } from './store';
 import type { LayerDefinition, LayerId, LayerStoreState } from './types';
 
 interface RequestState {
@@ -26,6 +26,7 @@ const getRequestState = (requests: Map<LayerId, RequestState>, layerId: LayerId)
 export const useLayerController = () => {
   const dispatch = useLayerDispatch();
   const store = useLayerStore();
+  const definitions = useLayerSelector((state) => state.catalog.definitions);
   const requests = useRef(new Map<LayerId, RequestState>());
 
   useEffect(
@@ -38,6 +39,20 @@ export const useLayerController = () => {
     },
     [],
   );
+
+  useEffect(() => {
+    const catalogIds = new Set(definitions.map(({ id }) => id));
+
+    for (const [layerId, request] of requests.current) {
+      if (catalogIds.has(layerId)) {
+        continue;
+      }
+
+      request.sequence += 1;
+      request.controller?.abort();
+      requests.current.delete(layerId);
+    }
+  }, [definitions]);
 
   const startLoading = useCallback(
     (definition: LayerDefinition): void => {
@@ -63,11 +78,15 @@ export const useLayerController = () => {
         .then((data) => {
           const current = store.get().layers[definition.id];
           const latestRequest = requests.current.get(definition.id);
-          if (!latestRequest || latestRequest.sequence !== requestId || !current.enabled) {
+          if (!latestRequest || latestRequest.sequence !== requestId) {
             return;
           }
 
           latestRequest.controller = null;
+          if (!current?.enabled) {
+            return;
+          }
+
           dispatch((state: LayerStoreState) =>
             updateLayerState(state, definition.id, {
               status: 'success',
@@ -88,7 +107,7 @@ export const useLayerController = () => {
           }
 
           const current = store.get().layers[definition.id];
-          if (!current.enabled) {
+          if (!current?.enabled) {
             return;
           }
 
